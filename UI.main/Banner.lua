@@ -5,7 +5,7 @@
 
 return {
     -- [Banner Image] รูปภาพแบนเนอร์ด้านบน (สามารถใส่เป็น Web URL https://... หรือ rbxassetid:// ได้)
-    BannerImage = "https://raw.githubusercontent.com/projectsingularityv1-debug/HYPER-LOADER/main/banner.png",
+    BannerImage = "https://raw.githubusercontent.com/projecthyper10-stack/HYPER-LOADER/refs/heads/main/banner.png",
     FallbackBanner = "rbxassetid://13857987062",
 
     -- [Title & Subtitle] หัวข้อหลักและคำอธิบาย

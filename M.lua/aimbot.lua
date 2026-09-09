@@ -706,7 +706,7 @@ end
 if getgenv and getgenv().loadstring and getfenv().loadstring ~= getgenv().loadstring then
     getfenv().loadstring = getgenv().loadstring
 end
-local Library = (getgenv and getgenv().loadstring or loadstring)(game:HttpGet('https://raw.githubusercontent.com/projectsingularityv1-debug/HYPER-LOADER/refs/heads/main/UI.main/ui.lua'))()
+local Library = (getgenv and getgenv().loadstring or loadstring)(game:HttpGet('https://raw.githubusercontent.com/projecthyper10-stack/HYPER-LOADER/refs/heads/main/UI.main/ui.lua'))()
 
 -- ============================================
 -- // 12. INITIALIZE WINDOW & TABS

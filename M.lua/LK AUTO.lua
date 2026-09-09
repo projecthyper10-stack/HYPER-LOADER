@@ -55,8 +55,8 @@ else
     -- 2. Online endpoints with fallback
     if not Library then
         local urls = {
-            "https://raw.githubusercontent.com/projectsingularityv1-debug/HYPER-LOADER/refs/heads/main/UI.main/ui.lua",
-            "https://raw.githubusercontent.com/projectsingularityv1-debug/HYPER-MAIN/refs/heads/main/ui.lua"
+            "https://raw.githubusercontent.com/projecthyper10-stack/HYPER-LOADER/refs/heads/main/UI.main/ui.lua",
+            "https://raw.githubusercontent.com/projecthyper10-stack/HYPER-LOADER/refs/heads/main/UI.main/ui.lua"
         }
         local req = (request or http_request or (syn and syn.request) or (http and http.request))
         for _, u in ipairs(urls) do
