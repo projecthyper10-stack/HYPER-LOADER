@@ -934,8 +934,19 @@ local U, Tw = _Services.UserInputService, _Services.TweenService
 local CurrentWindowScale = 1
 
 local function checkIsMobile()
-	local cam = workspace.CurrentCamera
-	return U.TouchEnabled or (cam and cam.ViewportSize.Y > 0 and cam.ViewportSize.Y <= 520)
+	local hasKeyboard = false
+	local hasMouse = false
+	pcall(function() hasKeyboard = U.KeyboardEnabled end)
+	pcall(function() hasMouse = U.MouseEnabled end)
+	if hasKeyboard or hasMouse then
+		return false
+	end
+	local hasTouch = false
+	pcall(function() hasTouch = U.TouchEnabled end)
+	if hasTouch then
+		return true
+	end
+	return false
 end
 
 do
@@ -1324,7 +1335,7 @@ do
 		RealBackground.BackgroundTransparency = 1
 		RealBackground.BorderColor3 = Color3.fromRGB(0,0,0)
 		RealBackground.BorderSizePixel = 0
-		RealBackground.Size = UDim2.new(1, 0, 0, isMobile and 26 or 35)
+		RealBackground.Size = UDim2.new(1, 0, 0, isMobile and 32 or 36)
 		RealBackground.ClipsDescendants = true
 
 		Background.Name = "Background"
@@ -1354,8 +1365,8 @@ do
 		UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
 
 		UIPadding_3.Parent = T_1
-		UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 8 or 13)
-		UIPadding_3.PaddingRight = UDim.new(0, isMobile and 45 or 70)
+		UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 10 or 13)
+		UIPadding_3.PaddingRight = UDim.new(0, isMobile and 55 or 70)
 
 		TextLabel_1.Parent = T_1
 		TextLabel_1.BackgroundColor3 = Color3.fromRGB(255,255,255)
@@ -1388,7 +1399,7 @@ do
 		TextLabel_2.RichText = true
 		TextLabel_2.Text = tostring(t)
 		TextLabel_2.TextColor3 = Color3.fromRGB(255,255,255)
-		TextLabel_2.TextSize = isMobile and 10 or 12
+		TextLabel_2.TextSize = isMobile and 12 or 13
 		TextLabel_2.TextWrapped = true
 		TextLabel_2.TextXAlignment = Enum.TextXAlignment.Left
 		TextLabel_2.AutomaticSize = Enum.AutomaticSize.Y
@@ -1401,7 +1412,7 @@ do
 		end
 
 		if i and i ~= "" then
-			UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 36 or 50)
+			UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 42 or 50)
 			local Image = Instance.new("Frame")
 			local Icon_1 = Instance.new("ImageLabel")
 			local Frame_1 = Instance.new("Frame")
@@ -1412,7 +1423,7 @@ do
 			Image.BackgroundTransparency = 1
 			Image.BorderColor3 = Color3.fromRGB(0,0,0)
 			Image.BorderSizePixel = 0
-			Image.Size = UDim2.new(0, isMobile and 28 or 40, 1, 0)
+			Image.Size = UDim2.new(0, isMobile and 34 or 40, 1, 0)
 
 			Icon_1.Name = "Icon"
 			Icon_1.Parent = Image
@@ -1422,7 +1433,7 @@ do
 			Icon_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Icon_1.BorderSizePixel = 0
 			Icon_1.Position = UDim2.new(0.5, 0,0.5, 0)
-			Icon_1.Size = UDim2.new(0, isMobile and 15 or 20, 0, isMobile and 15 or 20)
+			Icon_1.Size = UDim2.new(0, isMobile and 18 or 20, 0, isMobile and 18 or 20)
 			Icon_1.Image = gl(i).Image
 			Icon_1.ImageRectSize = gl(i).ImageRectSize
 			Icon_1.ImageRectOffset = gl(i).ImageRectPosition
@@ -2037,10 +2048,10 @@ function Library:Window(p)
 	local isMobileScreen = checkIsMobile()
 
 	-- แยกขนาดคอมพิวเตอร์ (PC) และ โทรศัพท์มือถือ (Mobile) ออกจากกันอย่างชัดเจน
-	local DesktopSize = p.Config.DesktopSize or p.Config.PCSize or p.Config.Size or UDim2.new(0, 560, 0, 420)
-	local MobileSize = p.Config.MobileSize or p.Config.PhoneSize or UDim2.new(0, 450, 0, 275)
+	local DesktopSize = p.Config.DesktopSize or p.Config.PCSize or p.Config.Size or UDim2.new(0, 580, 0, 440)
+	local MobileSize = p.Config.MobileSize or p.Config.PhoneSize or UDim2.new(0, 520, 0, 360)
 	local Size = isMobileScreen and MobileSize or DesktopSize
-	local TabWidth = isMobileScreen and (p.Config.MobileTabWidth or 115) or (p.TabWidth or p.Config.TabWidth or 150)
+	local TabWidth = isMobileScreen and (p.Config.MobileTabWidth or 125) or (p.TabWidth or p.Config.TabWidth or 150)
 	local ProfileData = p.Profile
 	local lp = _Services.Players.LocalPlayer
 	if not ProfileData then
@@ -2126,31 +2137,24 @@ function Library:Window(p)
 
 		local vpX = cam.ViewportSize.X
 		local vpY = cam.ViewportSize.Y
-		local isTouch = _Services.UserInputService.TouchEnabled
-		local isPhone = vpY <= 520 or (isTouch and vpY <= 600)
+		local isMobile = checkIsMobile()
 
-		if isPhone then
-			-- บนโทรศัพท์มือถือ: แยกขนาดให้เล็กลงแบบพอดีจอ สบายตา
-			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 450
-			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 275
-			local scaleX = (vpX * 0.68) / baseW
-			local scaleY = (vpY * 0.64) / baseH
-			WindowScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.48, 0.62)
-		elseif isTouch and vpY <= 750 then
-			-- บนแท็บเล็ต
-			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 500
-			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 350
-			local scaleX = (vpX * 0.78) / baseW
-			local scaleY = (vpY * 0.74) / baseH
-			WindowScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.62, 0.82)
+		local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 580
+		local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 440
+
+		if isMobile then
+			-- บนโทรศัพท์มือถือ/แท็บเล็ต: ปรับสเกลให้อยู่ในหน้าจอพอดี ไม่เล็กเกินไป สัมผัสง่าย
+			local targetScaleX = (vpX * 0.88) / baseW
+			local targetScaleY = (vpY * 0.86) / baseH
+			local targetScale = math.min(targetScaleX, targetScaleY)
+			WindowScale.Scale = math.clamp(targetScale, 0.75, 0.95)
 		else
-			-- บนคอมพิวเตอร์ (PC): ขนาดมาตรฐาน 1.0 กว้างขวาง คมชัด
-			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 560
-			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 420
-			if vpY < baseH + 60 or vpX < baseW + 60 then
-				local scaleX = (vpX - 40) / baseW
-				local scaleY = (vpY - 40) / baseH
-				WindowScale.Scale = math.clamp(math.min(scaleX, scaleY, 1.0), 0.60, 1.0)
+			-- บนคอมพิวเตอร์ (PC): ใช้สเกลเต็ม 1.0 เสมอ คมชัด กว้างขวาง
+			-- จะย่อลงเฉพาะกรณีหน้าต่างเกมเล็กกว่าตัว UI จริงๆ เท่านั้น
+			if vpY < baseH + 30 or vpX < baseW + 30 then
+				local scaleX = (vpX - 30) / baseW
+				local scaleY = (vpY - 30) / baseH
+				WindowScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.75, 1.0)
 			else
 				WindowScale.Scale = 1.0
 			end
@@ -2158,17 +2162,15 @@ function Library:Window(p)
 
 		CurrentWindowScale = WindowScale.Scale
 
-		-- ปรับขนาดปุ่มเปิด/ปิด (Breadcrumb / CloseUI) บนมือถือให้เล็กลงอย่างชัดเจน
+		-- ปรับขนาดปุ่มเปิด/ปิด (Breadcrumb / CloseUI)
 		local closeShadow = ScreenGui:FindFirstChild("CloseUIShadow")
 		if closeShadow then
 			local cScale = closeShadow:FindFirstChild("UIScale")
 			if cScale then
-				if isPhone then
-					cScale.Scale = 0.70 -- ในมือถือทำให้ปุ่มเล็กลง
-				elseif isTouch then
-					cScale.Scale = 0.82
+				if isMobile then
+					cScale.Scale = 0.88
 				else
-					cScale.Scale = 1.0  -- คอมพิวเตอร์ปุ่มขนาดปกติ
+					cScale.Scale = 1.0
 				end
 			end
 		end
@@ -2794,7 +2796,7 @@ function Library:Window(p)
 		Tab_1.BackgroundTransparency = 1
 		Tab_1.BorderColor3 = Color3.fromRGB(0,0,0)
 		Tab_1.BorderSizePixel = 0
-		Tab_1.Size = UDim2.new(1, 0, 0, isMobileTab and 22 or 30)
+		Tab_1.Size = UDim2.new(1, 0, 0, isMobileTab and 28 or 32)
 		Tab_1.LayoutOrder = p.LayoutOrder or 0
 
 		Func.Name = "Func"
@@ -2816,7 +2818,7 @@ function Library:Window(p)
 		Title_3.Font = Enum.Font.GothamBold
 		Title_3.Text = tostring(Title)
 		Title_3.TextColor3 = Color3.fromRGB(255,255,255)
-		Title_3.TextSize = isMobileTab and 10 or 11
+		Title_3.TextSize = isMobileTab and 11 or 12
 		Title_3.TextTransparency = Tabs.IsCollapsed and 1 or 0.7
 		Title_3.TextWrapped = true
 		Title_3.TextXAlignment = Enum.TextXAlignment.Left
@@ -2917,7 +2919,7 @@ function Library:Window(p)
 				DockBtn.Parent = Crumb
 				DockBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 				DockBtn.BackgroundTransparency = 1
-				DockBtn.Size = UDim2.new(0, isMobileDock and 18 or 24, 0, isMobileDock and 18 or 24)
+				DockBtn.Size = UDim2.new(0, isMobileDock and 20 or 24, 0, isMobileDock and 20 or 24)
 				DockBtn.LayoutOrder = p.LayoutOrder or (10 + #self.List)
 				DockBtn.Image = ImageLabel_2.Image
 				DockBtn.ImageRectSize = ImageLabel_2.ImageRectSize
@@ -3206,7 +3208,7 @@ function Library:Window(p)
 			Frame_1.BackgroundColor3 = Color3.fromRGB(36, 35, 48)
 			Frame_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Frame_1.BorderSizePixel = 0
-			Frame_1.Size = UDim2.new(0, isMobileToggle and 26 or 34, 0, isMobileToggle and 13 or 17)
+			Frame_1.Size = UDim2.new(0, isMobileToggle and 30 or 34, 0, isMobileToggle and 15 or 17)
 
 			UICorner_2.Parent = Frame_1
 			UICorner_2.CornerRadius = UDim.new(1,0)
@@ -3217,7 +3219,7 @@ function Library:Window(p)
 			Frame_2.BorderColor3 = Color3.fromRGB(0,0,0)
 			Frame_2.BorderSizePixel = 0
 			Frame_2.Position = UDim2.new(0, 0,0.5, 0)
-			Frame_2.Size = UDim2.new(0, isMobileToggle and 10 or 13, 0, isMobileToggle and 10 or 13)
+			Frame_2.Size = UDim2.new(0, isMobileToggle and 11 or 13, 0, isMobileToggle and 11 or 13)
 
 			if Value then
 				Frame_1.BackgroundColor3 = themes[IsTheme].Function.Toggle.True['Toggle Background']
@@ -3366,7 +3368,7 @@ function Library:Window(p)
 			local Button, Config = background(ScrollingFrame_1, Title, Desc, Image, 'Button')
 
 			Config:SetTextTransparencyTitle(0)
-			Config:SetSizeT(isMobileBtn and 36 or 50)
+			Config:SetSizeT(isMobileBtn and 44 or 50)
 
 			Button.ClipsDescendants = true
 
@@ -3383,7 +3385,7 @@ function Library:Window(p)
 			F.BorderColor3 = Color3.fromRGB(0,0,0)
 			F.BorderSizePixel = 0
 			F.Position = UDim2.new(1, 0,0.5, 0)
-			F.Size = UDim2.new(0, isMobileBtn and 36 or 50, 0.800000012, 0)
+			F.Size = UDim2.new(0, isMobileBtn and 44 or 50, 0.800000012, 0)
 
 			UIListLayout_1.Parent = F
 			UIListLayout_1.Padding = UDim.new(0,8)
@@ -3393,7 +3395,7 @@ function Library:Window(p)
 			UIListLayout_1.VerticalAlignment = Enum.VerticalAlignment.Center
 
 			UIPadding_1.Parent = F
-			UIPadding_1.PaddingRight = UDim.new(0, isMobileBtn and 8 or 13)
+			UIPadding_1.PaddingRight = UDim.new(0, isMobileBtn and 10 or 13)
 
 			Image_1.Name = "Image"
 			Image_1.Parent = F
@@ -3403,7 +3405,7 @@ function Library:Window(p)
 			Image_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Image_1.BorderSizePixel = 0
 			Image_1.Position = UDim2.new(1, 0,0.5, 0)
-			Image_1.Size = UDim2.new(0, isMobileBtn and 15 or 20, 0, isMobileBtn and 15 or 20)
+			Image_1.Size = UDim2.new(0, isMobileBtn and 18 or 20, 0, isMobileBtn and 18 or 20)
 			Image_1.Image = CacheImage("rbxassetid://14923748517")
 			Image_1.ImageTransparency = 0.3
 
@@ -3484,7 +3486,7 @@ function Library:Window(p)
 			F.BorderColor3 = Color3.fromRGB(0,0,0)
 			F.BorderSizePixel = 0
 			F.Position = UDim2.new(1, 0,0.5, 0)
-			F.Size = UDim2.new(0, isMobileSlider and 145 or 195, 0.8, 0)
+			F.Size = UDim2.new(0, isMobileSlider and 165 or 195, 0.8, 0)
 
 			UIListLayout_1.Parent = F
 			UIListLayout_1.Padding = UDim.new(0,8)
@@ -7437,7 +7439,7 @@ function Library:Window(p)
 			CloseUIShadow.BackgroundTransparency = 1
 			CloseUIShadow.AnchorPoint = Vector2.new(0.5, 1)
 			CloseUIShadow.Position = UDim2.new(0.5, 0, 0.98, 0)
-			CloseUIShadow.Size = UDim2.new(0, isMobileClosed and 88 or 120, 0, isMobileClosed and 36 or 48)
+			CloseUIShadow.Size = UDim2.new(0, isMobileClosed and 105 or 120, 0, isMobileClosed and 40 or 46)
 			CloseUIShadow.Image = CacheImage("rbxassetid://1316045217")
 			CloseUIShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
 			CloseUIShadow.ImageTransparency = 0.5
@@ -7491,7 +7493,7 @@ function Library:Window(p)
 			HomeBadge_1.Parent = Crumb_1
 			HomeBadge_1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			HomeBadge_1.BackgroundTransparency = 0.95
-			HomeBadge_1.Size = UDim2.new(0, isMobileClosed and 24 or 32, 0, isMobileClosed and 24 or 32)
+			HomeBadge_1.Size = UDim2.new(0, isMobileClosed and 28 or 32, 0, isMobileClosed and 28 or 32)
 			HomeBadge_1.LayoutOrder = 1
 			
 			local UIStroke_Home = Instance.new("UIStroke")
@@ -7506,7 +7508,7 @@ function Library:Window(p)
 			HomeIcon_1.AnchorPoint = Vector2.new(0.5, 0.5)
 			HomeIcon_1.BackgroundTransparency = 1
 			HomeIcon_1.Position = UDim2.new(0.5, 0, 0.5, 0)
-			HomeIcon_1.Size = UDim2.new(0, isMobileClosed and 18 or 26, 0, isMobileClosed and 18 or 26)
+			HomeIcon_1.Size = UDim2.new(0, isMobileClosed and 22 or 26, 0, isMobileClosed and 22 or 26)
 			HomeIcon_1.Image = Icon_1.Image
 			HomeIcon_1.ImageRectSize = Icon_1.ImageRectSize
 			HomeIcon_1.ImageRectOffset = Icon_1.ImageRectOffset
@@ -7609,7 +7611,7 @@ function Library:Window(p)
 								local corner = Instance.new("UICorner")
 								corner.CornerRadius = UDim.new(1, 0)
 								corner.Parent = bg
-								bg.Size = UDim2.new(0, isMobileGooey and 24 or 32, 0, isMobileGooey and 24 or 32)
+								bg.Size = UDim2.new(0, isMobileGooey and 28 or 32, 0, isMobileGooey and 28 or 32)
 								local stroke = Instance.new("UIStroke")
 								stroke.Color = Color3.fromRGB(45, 48, 60)
 								stroke.Transparency = 0.5

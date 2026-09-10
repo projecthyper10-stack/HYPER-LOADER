@@ -13,7 +13,7 @@ return {
     Subtitle = "Designed for maximum performance and stability.",
 
     -- [Version Footer] ข้อความด้านล่างสุด
-    Version = "Version 2.33",
+    Version = "Version 0.39.2 • macOS Edition",
 
     -- [Feature / Update List] รายการฟีเจอร์และอัปเดต (สามารถเพิ่มหรือแก้ข้อความได้ไม่จำกัด)
     Features = {
