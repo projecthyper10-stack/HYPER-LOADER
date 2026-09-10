@@ -931,6 +931,12 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 
 local U, Tw = _Services.UserInputService, _Services.TweenService
+local CurrentWindowScale = 1
+
+local function checkIsMobile()
+	local cam = workspace.CurrentCamera
+	return U.TouchEnabled or (cam and cam.ViewportSize.Y > 0 and cam.ViewportSize.Y <= 520)
+end
 
 do
 	function addToTheme(name, obj)
@@ -1312,12 +1318,13 @@ do
 		local TextLabel_1 = Instance.new("TextLabel")
 		local TextLabel_2 = Instance.new("TextLabel")
 
+		local isMobile = checkIsMobile()
 		RealBackground.Name = "Real Background"
 		RealBackground.Parent = pl
 		RealBackground.BackgroundTransparency = 1
 		RealBackground.BorderColor3 = Color3.fromRGB(0,0,0)
 		RealBackground.BorderSizePixel = 0
-		RealBackground.Size = UDim2.new(1, 0,0, 35)
+		RealBackground.Size = UDim2.new(1, 0, 0, isMobile and 26 or 35)
 		RealBackground.ClipsDescendants = true
 
 		Background.Name = "Background"
@@ -1347,8 +1354,8 @@ do
 		UIListLayout_2.VerticalAlignment = Enum.VerticalAlignment.Center
 
 		UIPadding_3.Parent = T_1
-		UIPadding_3.PaddingLeft = UDim.new(0,13)
-		UIPadding_3.PaddingRight = UDim.new(0,70)
+		UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 8 or 13)
+		UIPadding_3.PaddingRight = UDim.new(0, isMobile and 45 or 70)
 
 		TextLabel_1.Parent = T_1
 		TextLabel_1.BackgroundColor3 = Color3.fromRGB(255,255,255)
@@ -1381,7 +1388,7 @@ do
 		TextLabel_2.RichText = true
 		TextLabel_2.Text = tostring(t)
 		TextLabel_2.TextColor3 = Color3.fromRGB(255,255,255)
-		TextLabel_2.TextSize = 12
+		TextLabel_2.TextSize = isMobile and 10 or 12
 		TextLabel_2.TextWrapped = true
 		TextLabel_2.TextXAlignment = Enum.TextXAlignment.Left
 		TextLabel_2.AutomaticSize = Enum.AutomaticSize.Y
@@ -1394,7 +1401,7 @@ do
 		end
 
 		if i and i ~= "" then
-			UIPadding_3.PaddingLeft = UDim.new(0, 50)
+			UIPadding_3.PaddingLeft = UDim.new(0, isMobile and 36 or 50)
 			local Image = Instance.new("Frame")
 			local Icon_1 = Instance.new("ImageLabel")
 			local Frame_1 = Instance.new("Frame")
@@ -1405,7 +1412,7 @@ do
 			Image.BackgroundTransparency = 1
 			Image.BorderColor3 = Color3.fromRGB(0,0,0)
 			Image.BorderSizePixel = 0
-			Image.Size = UDim2.new(0, 40,1, 0)
+			Image.Size = UDim2.new(0, isMobile and 28 or 40, 1, 0)
 
 			Icon_1.Name = "Icon"
 			Icon_1.Parent = Image
@@ -1415,7 +1422,7 @@ do
 			Icon_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Icon_1.BorderSizePixel = 0
 			Icon_1.Position = UDim2.new(0.5, 0,0.5, 0)
-			Icon_1.Size = UDim2.new(0, 20,0, 20)
+			Icon_1.Size = UDim2.new(0, isMobile and 15 or 20, 0, isMobile and 15 or 20)
 			Icon_1.Image = gl(i).Image
 			Icon_1.ImageRectSize = gl(i).ImageRectSize
 			Icon_1.ImageRectOffset = gl(i).ImageRectPosition
@@ -1593,6 +1600,11 @@ do
 		DropdownSelect.BorderSizePixel = 0
 		DropdownSelect.Size = UDim2.new(0, 150,0, 0)
 		DropdownSelect.ClipsDescendants = true
+
+		local DropdownScale = Instance.new("UIScale")
+		DropdownScale.Name = "DropdownScale"
+		DropdownScale.Parent = DropdownSelect
+		DropdownScale.Scale = CurrentWindowScale
 
 		addToTheme('Function.Dropdown.Dropdown Select.Background', DropdownSelect)
 
@@ -2022,8 +2034,13 @@ function Library:Window(p)
 	end
 	local Theme = (p.Theme == 'Amethyst' or not p.Theme or p.Theme == '') and 'Dark' or p.Theme
 	local Keybind = p.Config.Keybind or Enum.KeyCode.LeftControl
-	local Size = p.Config.Size or UDim2.new(0, 530,0, 400)
-	local TabWidth = p.TabWidth or 150
+	local isMobileScreen = checkIsMobile()
+
+	-- แยกขนาดคอมพิวเตอร์ (PC) และ โทรศัพท์มือถือ (Mobile) ออกจากกันอย่างชัดเจน
+	local DesktopSize = p.Config.DesktopSize or p.Config.PCSize or p.Config.Size or UDim2.new(0, 560, 0, 420)
+	local MobileSize = p.Config.MobileSize or p.Config.PhoneSize or UDim2.new(0, 450, 0, 275)
+	local Size = isMobileScreen and MobileSize or DesktopSize
+	local TabWidth = isMobileScreen and (p.Config.MobileTabWidth or 115) or (p.TabWidth or p.Config.TabWidth or 150)
 	local ProfileData = p.Profile
 	local lp = _Services.Players.LocalPlayer
 	if not ProfileData then
@@ -2097,6 +2114,72 @@ function Library:Window(p)
 	Shadow_1.Visible = false
 
 	addToTheme('Shadow', Shadow_1)
+
+	local WindowScale = Instance.new("UIScale")
+	WindowScale.Name = "WindowScale"
+	WindowScale.Scale = 1
+	WindowScale.Parent = Shadow_1
+
+	local function updateWindowScale()
+		local cam = workspace.CurrentCamera
+		if not cam or cam.ViewportSize.X <= 0 or cam.ViewportSize.Y <= 0 then return end
+
+		local vpX = cam.ViewportSize.X
+		local vpY = cam.ViewportSize.Y
+		local isTouch = _Services.UserInputService.TouchEnabled
+		local isPhone = vpY <= 520 or (isTouch and vpY <= 600)
+
+		if isPhone then
+			-- บนโทรศัพท์มือถือ: แยกขนาดให้เล็กลงแบบพอดีจอ สบายตา
+			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 450
+			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 275
+			local scaleX = (vpX * 0.68) / baseW
+			local scaleY = (vpY * 0.64) / baseH
+			WindowScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.48, 0.62)
+		elseif isTouch and vpY <= 750 then
+			-- บนแท็บเล็ต
+			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 500
+			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 350
+			local scaleX = (vpX * 0.78) / baseW
+			local scaleY = (vpY * 0.74) / baseH
+			WindowScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.62, 0.82)
+		else
+			-- บนคอมพิวเตอร์ (PC): ขนาดมาตรฐาน 1.0 กว้างขวาง คมชัด
+			local baseW = Shadow_1.Size.X.Offset > 0 and Shadow_1.Size.X.Offset or 560
+			local baseH = Shadow_1.Size.Y.Offset > 0 and Shadow_1.Size.Y.Offset or 420
+			if vpY < baseH + 60 or vpX < baseW + 60 then
+				local scaleX = (vpX - 40) / baseW
+				local scaleY = (vpY - 40) / baseH
+				WindowScale.Scale = math.clamp(math.min(scaleX, scaleY, 1.0), 0.60, 1.0)
+			else
+				WindowScale.Scale = 1.0
+			end
+		end
+
+		CurrentWindowScale = WindowScale.Scale
+
+		-- ปรับขนาดปุ่มเปิด/ปิด (Breadcrumb / CloseUI) บนมือถือให้เล็กลงอย่างชัดเจน
+		local closeShadow = ScreenGui:FindFirstChild("CloseUIShadow")
+		if closeShadow then
+			local cScale = closeShadow:FindFirstChild("UIScale")
+			if cScale then
+				if isPhone then
+					cScale.Scale = 0.70 -- ในมือถือทำให้ปุ่มเล็กลง
+				elseif isTouch then
+					cScale.Scale = 0.82
+				else
+					cScale.Scale = 1.0  -- คอมพิวเตอร์ปุ่มขนาดปกติ
+				end
+			end
+		end
+	end
+
+	updateWindowScale()
+	pcall(function()
+		if workspace.CurrentCamera then
+			workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(updateWindowScale)
+		end
+	end)
 
 	UIPadding_1.Parent = Shadow_1
 	UIPadding_1.PaddingBottom = UDim.new(0,8)
@@ -2704,13 +2787,14 @@ function Library:Window(p)
 		local UIStroke_2 = Instance.new("UIStroke")
 		local Func = Instance.new("Frame")
 
+		local isMobileTab = checkIsMobile()
 		Tab_1.Name = "Tab"
 		Tab_1.Parent = TabList_1
 		Tab_1.BackgroundColor3 = Color3.fromRGB(255,255,255)
 		Tab_1.BackgroundTransparency = 1
 		Tab_1.BorderColor3 = Color3.fromRGB(0,0,0)
 		Tab_1.BorderSizePixel = 0
-		Tab_1.Size = UDim2.new(1, 0,0, 30)
+		Tab_1.Size = UDim2.new(1, 0, 0, isMobileTab and 22 or 30)
 		Tab_1.LayoutOrder = p.LayoutOrder or 0
 
 		Func.Name = "Func"
@@ -2732,7 +2816,7 @@ function Library:Window(p)
 		Title_3.Font = Enum.Font.GothamBold
 		Title_3.Text = tostring(Title)
 		Title_3.TextColor3 = Color3.fromRGB(255,255,255)
-		Title_3.TextSize = 11
+		Title_3.TextSize = isMobileTab and 10 or 11
 		Title_3.TextTransparency = Tabs.IsCollapsed and 1 or 0.7
 		Title_3.TextWrapped = true
 		Title_3.TextXAlignment = Enum.TextXAlignment.Left
@@ -2827,12 +2911,13 @@ function Library:Window(p)
 			local Crumb = Tabs.ReopenBreadcrumb:FindFirstChild("BackgroundCloseUI")
 			if Crumb then Crumb = Crumb:FindFirstChild("Crumb") end
 			if Crumb then
+				local isMobileDock = checkIsMobile()
 				DockBtn = Instance.new("ImageButton")
 				DockBtn.Name = "DockBtn_" .. Title
 				DockBtn.Parent = Crumb
 				DockBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 				DockBtn.BackgroundTransparency = 1
-				DockBtn.Size = UDim2.new(0, 24, 0, 24)
+				DockBtn.Size = UDim2.new(0, isMobileDock and 18 or 24, 0, isMobileDock and 18 or 24)
 				DockBtn.LayoutOrder = p.LayoutOrder or (10 + #self.List)
 				DockBtn.Image = ImageLabel_2.Image
 				DockBtn.ImageRectSize = ImageLabel_2.ImageRectSize
@@ -3116,11 +3201,12 @@ function Library:Window(p)
 			UIPadding_1.Parent = F_1
 			UIPadding_1.PaddingRight = UDim.new(0,13)
 
+			local isMobileToggle = checkIsMobile()
 			Frame_1.Parent = F_1
 			Frame_1.BackgroundColor3 = Color3.fromRGB(36, 35, 48)
 			Frame_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Frame_1.BorderSizePixel = 0
-			Frame_1.Size = UDim2.new(0, 34,0, 17)
+			Frame_1.Size = UDim2.new(0, isMobileToggle and 26 or 34, 0, isMobileToggle and 13 or 17)
 
 			UICorner_2.Parent = Frame_1
 			UICorner_2.CornerRadius = UDim.new(1,0)
@@ -3131,7 +3217,7 @@ function Library:Window(p)
 			Frame_2.BorderColor3 = Color3.fromRGB(0,0,0)
 			Frame_2.BorderSizePixel = 0
 			Frame_2.Position = UDim2.new(0, 0,0.5, 0)
-			Frame_2.Size = UDim2.new(0, 13,0, 13)
+			Frame_2.Size = UDim2.new(0, isMobileToggle and 10 or 13, 0, isMobileToggle and 10 or 13)
 
 			if Value then
 				Frame_1.BackgroundColor3 = themes[IsTheme].Function.Toggle.True['Toggle Background']
@@ -3275,11 +3361,12 @@ function Library:Window(p)
 			local Desc = p.Desc or ''
 			local Image = p.Image or ''
 			local Callback = p.Callback or function() end
+			local isMobileBtn = checkIsMobile()
 
 			local Button, Config = background(ScrollingFrame_1, Title, Desc, Image, 'Button')
 
 			Config:SetTextTransparencyTitle(0)
-			Config:SetSizeT(50)
+			Config:SetSizeT(isMobileBtn and 36 or 50)
 
 			Button.ClipsDescendants = true
 
@@ -3296,7 +3383,7 @@ function Library:Window(p)
 			F.BorderColor3 = Color3.fromRGB(0,0,0)
 			F.BorderSizePixel = 0
 			F.Position = UDim2.new(1, 0,0.5, 0)
-			F.Size = UDim2.new(0, 50,0.800000012, 0)
+			F.Size = UDim2.new(0, isMobileBtn and 36 or 50, 0.800000012, 0)
 
 			UIListLayout_1.Parent = F
 			UIListLayout_1.Padding = UDim.new(0,8)
@@ -3306,7 +3393,7 @@ function Library:Window(p)
 			UIListLayout_1.VerticalAlignment = Enum.VerticalAlignment.Center
 
 			UIPadding_1.Parent = F
-			UIPadding_1.PaddingRight = UDim.new(0,13)
+			UIPadding_1.PaddingRight = UDim.new(0, isMobileBtn and 8 or 13)
 
 			Image_1.Name = "Image"
 			Image_1.Parent = F
@@ -3316,7 +3403,7 @@ function Library:Window(p)
 			Image_1.BorderColor3 = Color3.fromRGB(0,0,0)
 			Image_1.BorderSizePixel = 0
 			Image_1.Position = UDim2.new(1, 0,0.5, 0)
-			Image_1.Size = UDim2.new(0, 20,0, 20)
+			Image_1.Size = UDim2.new(0, isMobileBtn and 15 or 20, 0, isMobileBtn and 15 or 20)
 			Image_1.Image = CacheImage("rbxassetid://14923748517")
 			Image_1.ImageTransparency = 0.3
 
@@ -3388,6 +3475,7 @@ function Library:Window(p)
 			local UICorner_4 = Instance.new("UICorner")
 			local UIPadding_2 = Instance.new("UIPadding")
 
+			local isMobileSlider = checkIsMobile()
 			F.Name = "F"
 			F.Parent = Slider
 			F.AnchorPoint = Vector2.new(1, 0.5)
@@ -3396,7 +3484,7 @@ function Library:Window(p)
 			F.BorderColor3 = Color3.fromRGB(0,0,0)
 			F.BorderSizePixel = 0
 			F.Position = UDim2.new(1, 0,0.5, 0)
-			F.Size = UDim2.new(0, 195,0.8, 0)
+			F.Size = UDim2.new(0, isMobileSlider and 145 or 195, 0.8, 0)
 
 			UIListLayout_1.Parent = F
 			UIListLayout_1.Padding = UDim.new(0,8)
@@ -4764,6 +4852,11 @@ function Library:Window(p)
 			ColorpickBar.BorderSizePixel = 0
 			ColorpickBar.Size = UDim2.new(0, 120,0, 0)
 			ColorpickBar.ClipsDescendants = true
+
+			local ColorpickScale = Instance.new("UIScale")
+			ColorpickScale.Name = "ColorpickScale"
+			ColorpickScale.Parent = ColorpickBar
+			ColorpickScale.Scale = CurrentWindowScale
 			local targetX = Picker_1.AbsolutePosition.X - ColorpickBar.Parent.AbsolutePosition.X + Picker_1.Size.X.Offset - 100
 			local targetY = Picker_1.AbsolutePosition.Y - ColorpickBar.Parent.AbsolutePosition.Y + Picker_1.Size.Y.Offset - 20
 			ColorpickBar.Position = UDim2.new(0, targetX, 0, targetY)
@@ -5672,10 +5765,15 @@ function Library:Window(p)
 	Notification.AnchorPoint = Vector2.new(1, 1)
 	Notification.BackgroundColor3 = Color3.fromRGB(255,255,255)
 	Notification.BackgroundTransparency = 1
-Notification.BorderColor3 = Color3.fromRGB(0,0,0)
+	Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 	Notification.BorderSizePixel = 0
 	Notification.Position = UDim2.new(1, 0,1, 0)
 	Notification.Size = UDim2.new(0, 100,0, 100)
+
+	local NotifScale = Instance.new("UIScale")
+	NotifScale.Name = "NotifScale"
+	NotifScale.Parent = Notification
+	NotifScale.Scale = (U.TouchEnabled or (workspace.CurrentCamera and workspace.CurrentCamera.ViewportSize.Y <= 520)) and 0.82 or 1.0
 
 	UIPaddingUIListLayoutNotification_1.Parent = Notification
 	UIPaddingUIListLayoutNotification_1.PaddingBottom = UDim.new(0,20)
@@ -7028,9 +7126,10 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			if not isZ then
 				originalSize = Shadow_1.Size
 				originalPosition = Shadow_1.Position
+				WindowScale.Scale = 1.0
 				tw({v = Shadow_1, t = 0.15, s = Enum.EasingStyle.Exponential, d = "Out", g = {
 					Size = UDim2.new(1, 0, 1, 0),
-					Position = UDim2.new(0, 0, 0, 0)
+					Position = UDim2.new(0.5, 0, 0.5, 0)
 				}}):Play()
 				Minisize_1.Image = CacheImage("rbxassetid://13857981896")
 			else
@@ -7039,19 +7138,13 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 					Size = originalSize,
 					Position = originalPosition
 				}}):Play()
+				updateWindowScale()
 			end
 			isZ = not isZ
 		end)
 
 		if not HAA then
-			local AP, PAZ = Shadow_1.AbsolutePosition, Shadow_1.Parent.AbsoluteSize
-			local NP = UDim2.new((AP.X / PAZ.X),
-				Shadow_1.Position.X.Offset,
-				(AP.Y / PAZ.Y),
-				Shadow_1.Position.Y.Offset)
-
-			Shadow_1.AnchorPoint = Vector2.new(0, 0)
-			Shadow_1.Position = NP
+			Shadow_1.AnchorPoint = Vector2.new(0.5, 0.5)
 			HAA = true
 		end
 
@@ -7337,13 +7430,14 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			local Chevron_1 = Instance.new("ImageLabel")
 			local Title_1 = Instance.new("TextLabel")
 
+			local isMobileClosed = checkIsMobile()
 			CloseUIShadow.Name = "CloseUIShadow"
 			CloseUIShadow.Parent = ScreenGui
 			CloseUIShadow.BackgroundColor3 = Color3.fromRGB(163,162,165)
 			CloseUIShadow.BackgroundTransparency = 1
 			CloseUIShadow.AnchorPoint = Vector2.new(0.5, 1)
 			CloseUIShadow.Position = UDim2.new(0.5, 0, 0.98, 0)
-			CloseUIShadow.Size = UDim2.new(0, 120, 0, 48)
+			CloseUIShadow.Size = UDim2.new(0, isMobileClosed and 88 or 120, 0, isMobileClosed and 36 or 48)
 			CloseUIShadow.Image = CacheImage("rbxassetid://1316045217")
 			CloseUIShadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
 			CloseUIShadow.ImageTransparency = 0.5
@@ -7397,7 +7491,7 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			HomeBadge_1.Parent = Crumb_1
 			HomeBadge_1.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 			HomeBadge_1.BackgroundTransparency = 0.95
-			HomeBadge_1.Size = UDim2.new(0, 32, 0, 32)
+			HomeBadge_1.Size = UDim2.new(0, isMobileClosed and 24 or 32, 0, isMobileClosed and 24 or 32)
 			HomeBadge_1.LayoutOrder = 1
 			
 			local UIStroke_Home = Instance.new("UIStroke")
@@ -7412,7 +7506,7 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			HomeIcon_1.AnchorPoint = Vector2.new(0.5, 0.5)
 			HomeIcon_1.BackgroundTransparency = 1
 			HomeIcon_1.Position = UDim2.new(0.5, 0, 0.5, 0)
-			HomeIcon_1.Size = UDim2.new(0, 26, 0, 26)
+			HomeIcon_1.Size = UDim2.new(0, isMobileClosed and 18 or 26, 0, isMobileClosed and 18 or 26)
 			HomeIcon_1.Image = Icon_1.Image
 			HomeIcon_1.ImageRectSize = Icon_1.ImageRectSize
 			HomeIcon_1.ImageRectOffset = Icon_1.ImageRectOffset
@@ -7515,6 +7609,7 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 								local corner = Instance.new("UICorner")
 								corner.CornerRadius = UDim.new(1, 0)
 								corner.Parent = bg
+								bg.Size = UDim2.new(0, isMobileGooey and 24 or 32, 0, isMobileGooey and 24 or 32)
 								local stroke = Instance.new("UIStroke")
 								stroke.Color = Color3.fromRGB(45, 48, 60)
 								stroke.Transparency = 0.5
@@ -7530,11 +7625,12 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 						end
 						
 						-- โหมดส่วนโค้งตามขอบจอ (ชิดขอบและกะทัดรัด ไม่ใหญ่ ไม่ลอยบังตัวละคร)
+						local isMobileGooey = checkIsMobile()
 						local count = #allBtns
-						local baseRadius = 75
-						local anglePerItem = 25
+						local baseRadius = isMobileGooey and 48 or 75
+						local anglePerItem = isMobileGooey and 22 or 25
 						local totalSpread = (count - 1) * anglePerItem
-						local maxSpread = 140
+						local maxSpread = isMobileGooey and 120 or 140
 						
 						if totalSpread > maxSpread then
 							totalSpread = maxSpread
@@ -7543,10 +7639,10 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 							end
 						end
 						
-						local minCenterDist = 34
+						local minCenterDist = isMobileGooey and 22 or 34
 						local halfAngleRad = math.rad(anglePerItem / 2)
 						local minRadius = (count > 1 and halfAngleRad > 0) and (minCenterDist / (2 * math.sin(halfAngleRad))) or baseRadius
-						local radius = math.clamp(math.max(baseRadius, math.ceil(minRadius)), 65, 85)
+						local radius = math.clamp(math.max(baseRadius, math.ceil(minRadius)), isMobileGooey and 40 or 65, isMobileGooey and 58 or 85)
 						local shadowSpread = math.max(160, math.ceil((radius + 20) * 2))
 						
 						local baseAngle = 0
@@ -7838,12 +7934,26 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			end
 		})
 
+		local windowScaleSliderObj = SettingsTab:Slider({
+			Title = "UI Scale",
+			Desc = "Adjust the size of the main UI window",
+			Min = 45,
+			Max = 140,
+			Default = math.floor(WindowScale.Scale * 100),
+			Callback = function(val)
+				if WindowScale then
+					CurrentWindowScale = val / 100
+					tw({v = WindowScale, t = 0.15, s = Enum.EasingStyle.Exponential, d = "Out", g = {Scale = val / 100}}):Play()
+				end
+			end
+		})
+
 		local breadcrumbSliderObj = SettingsTab:Slider({
 			Title = "Breadcrumb Size",
 			Desc = "Adjust the scale of the minimized UI tab",
-			Min = 100,
-			Max = 200,
-			Default = 100,
+			Min = 50,
+			Max = 150,
+			Default = math.floor((ScreenGui:FindFirstChild("CloseUIShadow") and ScreenGui.CloseUIShadow:FindFirstChild("UIScale") and ScreenGui.CloseUIShadow.UIScale.Scale or 1) * 100),
 			Callback = function(val)
 				local closeShadow = ScreenGui:FindFirstChild("CloseUIShadow")
 				if closeShadow and closeShadow:FindFirstChild("UIScale") then
@@ -7856,10 +7966,16 @@ Notification.BorderColor3 = Color3.fromRGB(0,0,0)
 			Desc = "Reset UI position and scale",
 			Callback = function()
 				if Tabs.SetCrumbOrientation then
-					Tabs.SetCrumbOrientation("Top")
+					Tabs.SetCrumbOrientation("Bottom")
+				end
+				updateWindowScale()
+				if windowScaleSliderObj then
+					windowScaleSliderObj:SetValue(math.floor(WindowScale.Scale * 100))
 				end
 				if breadcrumbSliderObj then
-					breadcrumbSliderObj:SetValue(100)
+					local closeShadow = ScreenGui:FindFirstChild("CloseUIShadow")
+					local cScale = closeShadow and closeShadow:FindFirstChild("UIScale")
+					breadcrumbSliderObj:SetValue(math.floor((cScale and cScale.Scale or 1) * 100))
 				end
 				Shadow_1.AnchorPoint = Vector2.new(0.5, 0.5)
 				Shadow_1.Position = UDim2.new(0.5, 0, 0.5, 0)

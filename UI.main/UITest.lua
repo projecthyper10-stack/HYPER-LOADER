@@ -47,7 +47,7 @@ end
 Library = resLoad
 
 -- 2. Setup Dynamic Window Sizing
-local WindowSize = UserInputService.TouchEnabled and UDim2.fromOffset(550, 550) or UDim2.fromOffset(570, 460)
+local WindowSize = UserInputService.TouchEnabled and UDim2.fromOffset(530, 400) or UDim2.fromOffset(570, 460)
 
 -- 3. Resolve User Profile & Key System Data
 local KeyUsername = getgenv().KeyUsername or LocalPlayer.DisplayName or LocalPlayer.Name

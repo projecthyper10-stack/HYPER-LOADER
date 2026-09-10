@@ -1218,9 +1218,27 @@ KeyCardScale.Parent = KeyCard
 local function updateKeyCardScale()
     local cam = workspace.CurrentCamera
     if cam and cam.ViewportSize.X > 0 and cam.ViewportSize.Y > 0 then
-        local scaleX = (cam.ViewportSize.X - 30) / 680
-        local scaleY = (cam.ViewportSize.Y - 30) / 450
-        KeyCardScale.Scale = math.clamp(math.min(scaleX, scaleY, 1.0), 0.55, 1.0)
+        local vpX = cam.ViewportSize.X
+        local vpY = cam.ViewportSize.Y
+        local isTouch = UserInputService.TouchEnabled
+        local isPhone = vpY <= 520 or (isTouch and vpY <= 600)
+
+        if isPhone then
+            -- บนโทรศัพท์มือถือ: ปรับขนาดให้กะทัดรัด พอดีจอ สบายตา ไม่ล้นจอ
+            local scaleX = (vpX * 0.70) / 680
+            local scaleY = (vpY * 0.66) / 450
+            KeyCardScale.Scale = math.clamp(math.min(scaleX, scaleY), 0.48, 0.66)
+        elseif isTouch and vpY <= 750 then
+            -- แท็บเล็ต / จอสัมผัส
+            local scaleX = (vpX * 0.80) / 680
+            local scaleY = (vpY * 0.76) / 450
+            KeyCardScale.Scale = math.clamp(math.min(scaleX, scaleY, 0.85), 0.58, 0.82)
+        else
+            -- บน PC / จอมาตรฐาน
+            local scaleX = (vpX - 40) / 680
+            local scaleY = (vpY - 40) / 450
+            KeyCardScale.Scale = math.clamp(math.min(scaleX, scaleY, 1.0), 0.60, 1.0)
+        end
     end
 end
 updateKeyCardScale()
@@ -2080,15 +2098,105 @@ task.spawn(function()
         TargetGames[detectedGameName] = gameConfig
     end
 
-    -- 2. Free game (No key required)
-    if gameConfig.RequiresKey == false then
-        runLoaderSequence(detectedGameName, gameConfig)
-        return
-    end
-
-    -- 3. Game Requires Key -> Always show KeyCard Modal for key entry
+    -- Always show KeyCard Modal (ทั้งเกมที่ต้องใช้คีย์ และเกมที่ไม่ต้องใช้คีย์)
     CenterLoader.Visible = false
     KeyCard.Visible = true
+
+    -- 2. Free game (No key required) -> แสดงหน้าต่าง Loader พร้อมแบนเนอร์ แต่ซ่อนช่องใส่คีย์ และมีปุ่มกดเริ่มได้ทันที
+    if gameConfig.RequiresKey == false then
+        KeyInputContainer.Visible = false
+        KeySiteLink.Visible = false
+
+        KeySubtitle.Text = "Ready to launch • " .. tostring(detectedGameName)
+
+        -- ขยับปุ่มเริ่ม (VerifyBtn) ขึ้นมาตรงกลาง และเปลี่ยนข้อความเป็น "Start Script   →"
+        VerifyBtn.Position = UDim2.new(0.5, 0, 0, 185)
+        VerifyBtn.Size = UDim2.new(0, 250, 0, 44)
+        VerifyBtn.Text = "Start Script   →"
+        VerifyBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+
+        -- กล่องแสดงสถานะความพร้อมและชื่อเกม (Game Info Badge)
+        local GameInfoCard = Instance.new("Frame")
+        GameInfoCard.Name = "GameInfoCard"
+        GameInfoCard.AnchorPoint = Vector2.new(0.5, 0)
+        GameInfoCard.Position = UDim2.new(0.5, 0, 0, 245)
+        GameInfoCard.Size = UDim2.new(0, 250, 0, 48)
+        GameInfoCard.BackgroundColor3 = Color3.fromRGB(15, 17, 23)
+        GameInfoCard.BorderSizePixel = 0
+        GameInfoCard.ZIndex = 23
+        GameInfoCard.Parent = LeftPanel
+        createCorner(GameInfoCard, 8)
+        createStroke(GameInfoCard, Color3.fromRGB(34, 38, 50), 1, 0)
+
+        local StatusDot = Instance.new("Frame")
+        StatusDot.Name = "StatusDot"
+        StatusDot.AnchorPoint = Vector2.new(0, 0.5)
+        StatusDot.Position = UDim2.new(0, 14, 0.5, 0)
+        StatusDot.Size = UDim2.new(0, 8, 0, 8)
+        StatusDot.BackgroundColor3 = Color3.fromRGB(40, 200, 64)
+        StatusDot.BorderSizePixel = 0
+        StatusDot.ZIndex = 24
+        StatusDot.Parent = GameInfoCard
+        createCorner(StatusDot, 4)
+
+        local GameInfoTitle = Instance.new("TextLabel")
+        GameInfoTitle.Name = "GameInfoTitle"
+        GameInfoTitle.AnchorPoint = Vector2.new(0, 0)
+        GameInfoTitle.Position = UDim2.new(0, 30, 0, 8)
+        GameInfoTitle.Size = UDim2.new(1, -40, 0, 16)
+        GameInfoTitle.BackgroundTransparency = 1
+        GameInfoTitle.Font = Enum.Font.GothamBold
+        GameInfoTitle.Text = tostring(detectedGameName)
+        GameInfoTitle.TextColor3 = Color3.fromRGB(245, 245, 250)
+        GameInfoTitle.TextSize = 12
+        GameInfoTitle.TextXAlignment = Enum.TextXAlignment.Left
+        GameInfoTitle.ZIndex = 24
+        GameInfoTitle.Parent = GameInfoCard
+
+        local GameInfoSub = Instance.new("TextLabel")
+        GameInfoSub.Name = "GameInfoSub"
+        GameInfoSub.AnchorPoint = Vector2.new(0, 0)
+        GameInfoSub.Position = UDim2.new(0, 30, 0, 26)
+        GameInfoSub.Size = UDim2.new(1, -40, 0, 14)
+        GameInfoSub.BackgroundTransparency = 1
+        GameInfoSub.Font = Enum.Font.GothamMedium
+        GameInfoSub.Text = "Free Access • Ready to Execute"
+        GameInfoSub.TextColor3 = Color3.fromRGB(115, 120, 135)
+        GameInfoSub.TextSize = 10
+        GameInfoSub.TextXAlignment = Enum.TextXAlignment.Left
+        GameInfoSub.ZIndex = 24
+        GameInfoSub.Parent = GameInfoCard
+
+        local isStarting = false
+        local function handleDirectStart()
+            if isStarting then return end
+            isStarting = true
+            VerifyBtn.Active = false
+            VerifyBtn.Text = "Starting..."
+            KeyStatus.TextColor3 = Color3.fromRGB(40, 200, 64)
+            KeyStatus.Text = "Launching " .. tostring(detectedGameName) .. "..."
+            TweenService:Create(VerifyBtn, TweenInfo.new(0.25), { BackgroundColor3 = Color3.fromRGB(40, 200, 64) }):Play()
+            task.wait(0.35)
+
+            -- Smooth fade out KeyCard
+            pcall(function()
+                TweenService:Create(KeyCard, TweenInfo.new(0.35, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+                    BackgroundTransparency = 1
+                }):Play()
+            end)
+            task.wait(0.35)
+            KeyCard.Visible = false
+            runLoaderSequence(detectedGameName, gameConfig)
+        end
+
+        VerifyBtn.MouseButton1Click:Connect(handleDirectStart)
+        UserInputService.InputBegan:Connect(function(input, gpe)
+            if not isStarting and not gpe and (input.KeyCode == Enum.KeyCode.Return or input.KeyCode == Enum.KeyCode.KeypadEnter) then
+                handleDirectStart()
+            end
+        end)
+        return
+    end
 
     local function handleKeySubmit()
         local key = KeyInputBox.Text:match("^%s*(.-)%s*$")
