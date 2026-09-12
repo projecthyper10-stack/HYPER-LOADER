@@ -1,6 +1,6 @@
 -- ==============================================================================
---  HYPER HUB / Singularity - Modern Lucide & FontAwesome Icon Engine (Compkiller 2.6)
---  Created by K2NTA ST | Project Singularity
+--  HYPER HUB / HYPER - Modern Lucide & FontAwesome Icon Engine (Compkiller 2.6)
+--  Created by K2NTA ST | Project HYPER
 --  Standalone, High-Performance, Zero Spritesheet Misalignment
 -- ==============================================================================
 
