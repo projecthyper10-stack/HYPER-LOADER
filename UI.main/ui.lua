@@ -1,4 +1,3 @@
-
 local _cloneref = (typeof(cloneref) == "function" and cloneref) or function(...) return ... end
 local _gethui = (typeof(gethui) == "function" and gethui) or (typeof(get_hidden_gui) == "function" and get_hidden_gui) or nil
 local _protectgui = (typeof(protect_gui) == "function" and protect_gui) or (typeof(syn) == "table" and syn and syn.protect_gui) or nil
@@ -926,23 +925,70 @@ ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 ScreenGui.IgnoreGuiInset = true
 
 local U, Tw = _Services.UserInputService, _Services.TweenService
+local UIS = U
 local CurrentWindowScale = 1
 
+-- User / Device Identification (ระบบตรวจสอบอุปกรณ์และ OS แบบใหม่)
+local ScriptCache = ScriptCache or {}
+ScriptCache.userIdentify = ScriptCache.userIdentify or {
+	is_loaded_lc = true,
+	device = nil,
+	executor = (typeof(identifyexecutor) == "function" and identifyexecutor()) or "Unknown"
+}
+
+-- ระบบตรวจจับ Device / Platform ตามเงื่อนไข Input ของ Roblox
+local detectedDevice = (function()
+	local ok, dev = pcall(function()
+		return if UIS.TouchEnabled and not UIS.KeyboardEnabled then "Mobile"
+			elseif UIS.KeyboardEnabled and UIS.MouseEnabled then "PC"
+			elseif UIS.GamepadEnabled then "Console"
+			else "Unknown"
+	end)
+	if ok and dev then return dev end
+
+	local touch, kb, mouse, gamepad = false, false, false, false
+	pcall(function() touch = UIS.TouchEnabled end)
+	pcall(function() kb = UIS.KeyboardEnabled end)
+	pcall(function() mouse = UIS.MouseEnabled end)
+	pcall(function() gamepad = UIS.GamepadEnabled end)
+
+	if touch and not kb then
+		return "Mobile"
+	elseif kb and mouse then
+		return "PC"
+	elseif gamepad then
+		return "Console"
+	else
+		return "Unknown"
+	end
+end)()
+
+ScriptCache.userIdentify.device = detectedDevice
+
+-- ปรับให้เข้ากับระบบของ Library เราโดยตรง
+Library.userIdentify = ScriptCache.userIdentify
+Library.Device = ScriptCache.userIdentify.device
+Library.OS = ScriptCache.userIdentify.device
+Library.ScriptCache = ScriptCache
+
 local function checkIsMobile()
-	local hasKeyboard = false
-	local hasMouse = false
-	pcall(function() hasKeyboard = U.KeyboardEnabled end)
-	pcall(function() hasMouse = U.MouseEnabled end)
-	if hasKeyboard or hasMouse then
-		return false
-	end
-	local hasTouch = false
-	pcall(function() hasTouch = U.TouchEnabled end)
-	if hasTouch then
-		return true
-	end
-	return false
+	return ScriptCache.userIdentify.device == "Mobile"
 end
+
+local function checkIsPC()
+	return ScriptCache.userIdentify.device == "PC"
+end
+
+local function checkIsConsole()
+	return ScriptCache.userIdentify.device == "Console"
+end
+
+Library.checkIsMobile = checkIsMobile
+Library.checkIsPC = checkIsPC
+Library.checkIsConsole = checkIsConsole
+Library.isMobile = (ScriptCache.userIdentify.device == "Mobile")
+Library.isPC = (ScriptCache.userIdentify.device == "PC")
+Library.isConsole = (ScriptCache.userIdentify.device == "Console")
 
 do
 	function addToTheme(name, obj)
@@ -7867,6 +7913,11 @@ function Library:Window(p)
 		HomeTab:Label({
 			Title = "Executor",
 			Desc = (identifyexecutor and identifyexecutor()) or "Unknown"
+		})
+
+		HomeTab:Label({
+			Title = "Device / OS",
+			Desc = Library.Device or ScriptCache.userIdentify.device or "Unknown"
 		})
 
 		-- Time updater
