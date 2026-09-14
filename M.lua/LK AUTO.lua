@@ -138,7 +138,7 @@ local Window = Library:Window({
 
     Title = "LK AUTO",
     Desc = "Quest Auto Farm",
-    Icon = "https://img2.pic.in.th/HYPER.png",
+    Icon = "https://i.postimg.cc/c4VhHd3s/HYPER-v2.png",
     Theme = "Dark",
     Config = {
         Keybind = Enum.KeyCode.RightShift,

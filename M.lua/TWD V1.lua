@@ -1271,7 +1271,7 @@ local Window = Library:Window({
     },
     Title = "TWD V1 Hub",
     Desc = "Zombie Apocalypse All-in-One",
-    Icon = "https://img2.pic.in.th/HYPER.png",
+    Icon = "https://i.postimg.cc/c4VhHd3s/HYPER-v2.png",
     Theme = "Dark",
     Config = {
         Keybind = Enum.KeyCode.RightShift,
