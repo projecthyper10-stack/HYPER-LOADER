@@ -628,7 +628,7 @@ local Window = Library:Window({
     },
     Title = "Project Delta Hub",
     Desc = "Tactical Survival & Looting Suite",
-    Icon = "https://i.postimg.cc/c4VhHd3s/HYPER-v2.png",
+    Icon = "https://i.postimg.cc/5tRtv6F0/89-B301701.png",
     Theme = "Dark",
     Config = {
         Keybind = Enum.KeyCode.RightShift,

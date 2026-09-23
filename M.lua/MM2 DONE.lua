@@ -292,7 +292,7 @@ local Window = Library:Window({
 
     Title = "HYPER HUB",
     Desc = "Murder Mystery 2",
-    Icon = "https://i.postimg.cc/c4VhHd3s/HYPER-v2.png",
+    Icon = "https://i.postimg.cc/5tRtv6F0/89-B301701.png",
     Theme = "Dark",
     Config = {
         Keybind = Enum.KeyCode.RightShift,
@@ -648,10 +648,10 @@ end
 --------------------------------------------------------------------------------
 -- 5. Auto Farm Coin
 --------------------------------------------------------------------------------
-local function getNearestCoin(coinsList, originPos)
+local function getNearestCoin(coinsList, originPos, blacklist)
     local nearest, shortest = nil, math.huge
     for _, coin in ipairs(coinsList) do
-        if coin and coin.Parent then
+        if coin and coin.Parent and (not blacklist or not blacklist[coin]) then
             local d = (coin.Position - originPos).Magnitude
             if d < shortest then shortest = d; nearest = coin end
         end
@@ -661,7 +661,7 @@ end
 
 local function tweenToCoin(targetPart)
     local c = player.Character
-    if not c or not c:FindFirstChild("HumanoidRootPart") then return end
+    if not c or not c:FindFirstChild("HumanoidRootPart") then return false end
     local hrp = c.HumanoidRootPart
     if env.State.GhostFly then env.State.GhostFly = false end
 
@@ -715,6 +715,33 @@ local function tweenToCoin(targetPart)
             floatTime = floatTime + 0.03
         end
     end
+
+    return (not targetPart or not targetPart.Parent)
+end
+
+-- ระบบเช็คกระเป๋าเหรียญเต็ม และ Blacklist เหรียญที่ติดบั๊ก
+local coinBlacklist = {}
+local coinAttempts = {}
+local consecutiveFails = 0
+local isBagFull = false
+
+local function checkIsBagFullGui()
+    local pg = player:FindFirstChild("PlayerGui")
+    if not pg then return false end
+    local mainGui = pg:FindFirstChild("MainGUI") or pg:FindFirstChild("GameGUI")
+    if mainGui then
+        for _, desc in ipairs(mainGui:GetDescendants()) do
+            if desc:IsA("TextLabel") and desc.Visible then
+                local cur, maxVal = string.match(desc.Text, "(%d+)%s*/%s*(%d+)")
+                if cur and maxVal and tonumber(cur) and tonumber(maxVal) then
+                    if tonumber(cur) >= tonumber(maxVal) and tonumber(maxVal) > 0 then
+                        return true
+                    end
+                end
+            end
+        end
+    end
+    return false
 end
 
 task.spawn(function()
@@ -826,14 +853,51 @@ task.spawn(function()
                                 end
                             end
                         else
-                            if env.UpdateStatus then env.UpdateStatus("⚡ เก็บเหรียญ (เหลือ " .. #coins .. ")") end
-                            local nearest = getNearestCoin(coins, c.HumanoidRootPart.Position)
-                            if nearest and nearest.Parent then tweenToCoin(nearest) end
+                            if isBagFull or checkIsBagFullGui() then
+                                isBagFull = true
+                                if env.UpdateStatus then env.UpdateStatus("🎒 กระเป๋าเหรียญเต็มแล้ว (รอรอบใหม่)") end
+                                task.wait(1)
+                            else
+                                local validCoins = {}
+                                for _, c_obj in ipairs(coins) do
+                                    if c_obj and c_obj.Parent and not coinBlacklist[c_obj] then
+                                        table.insert(validCoins, c_obj)
+                                    end
+                                end
+
+                                if #validCoins > 0 then
+                                    if env.UpdateStatus then env.UpdateStatus("⚡ เก็บเหรียญ (เหลือ " .. #validCoins .. ")") end
+                                    local nearest = getNearestCoin(validCoins, c.HumanoidRootPart.Position, coinBlacklist)
+                                    if nearest and nearest.Parent then
+                                        local collected = tweenToCoin(nearest)
+                                        if not collected then
+                                            coinAttempts[nearest] = (coinAttempts[nearest] or 0) + 1
+                                            if coinAttempts[nearest] >= 2 then
+                                                coinBlacklist[nearest] = true
+                                            end
+                                            consecutiveFails = consecutiveFails + 1
+                                            if consecutiveFails >= 4 or checkIsBagFullGui() then
+                                                isBagFull = true
+                                                if env.UpdateStatus then env.UpdateStatus("🎒 กระเป๋าเหรียญเต็มแล้ว (รอรอบใหม่)") end
+                                            end
+                                        else
+                                            consecutiveFails = 0
+                                        end
+                                    end
+                                else
+                                    if env.UpdateStatus then env.UpdateStatus("🎒 กระเป๋าเต็ม หรือไม่มีเหรียญที่เก็บได้ (รอรอบใหม่)") end
+                                    task.wait(1)
+                                end
+                            end
                         end
                     end
                 else
+                    isBagFull = false
+                    coinBlacklist = {}
+                    coinAttempts = {}
+                    consecutiveFails = 0
                     if env.UpdateStatus then env.UpdateStatus("รอเหรียญเกิดใหม่...") end
-                    task.wait(0.5)
+                    task.wait(1)
                 end
             end
         else
@@ -1100,21 +1164,24 @@ end
 --------------------------------------------------------------------------------
 -- 8. Anti-Murderer (หนีฆาตกรอัตโนมัติ)
 --------------------------------------------------------------------------------
+local lastEscapeTime = 0
 task.spawn(function()
     while env.K2NTA_RunID == currentRunId do
         if env.State.AntiMurderer then
             local mc = player.Character; local mhrp = mc and mc:FindFirstChild("HumanoidRootPart")
-            if mhrp then
+            if mhrp and (tick() - lastEscapeTime) > 0.8 then
                 for _, p in ipairs(Players:GetPlayers()) do
                     if p ~= player and isMurderer(p) then
                         local pc = p.Character; local phrp = pc and pc:FindFirstChild("HumanoidRootPart")
                         if phrp then
                             local d = (mhrp.Position - phrp.Position).Magnitude
-                            if d <= 25 then
+                            if d <= 28 then
+                                lastEscapeTime = tick()
                                 local dir = (mhrp.Position - phrp.Position).Unit
-                                mhrp.CFrame = CFrame.new(mhrp.Position + dir * 30 + Vector3.new(0,5,0))
+                                mhrp.CFrame = CFrame.new(mhrp.Position + dir * 55 + Vector3.new(0, 8, 0))
                                 if env.UpdateStatus then env.UpdateStatus("⚠️ วาปหนี " .. p.Name) end
                                 if env.DebugLog then env.DebugLog("AntiMurderer: Escaped from " .. p.Name .. ", Dist was " .. math.floor(d)) end
+                                break
                             end
                         end
                     end
@@ -1877,23 +1944,35 @@ end })
 --------------------------------------------------------------------------------
 -- Status & Debug Wrapper → ส่งไป Console UI
 --------------------------------------------------------------------------------
-env.UpdateStatus = function(text)
+local lastStatusText = ""
+local lastStatusTime = 0
+
+env.UpdateStatus = function(text, force)
     if not text then return end
+    local now = tick()
+    -- Debounce ข้อความซ้ำเดิมภายใน 3 วินาที เพื่อไม่ให้สแปมคอนโซล
+    if text == lastStatusText and (now - lastStatusTime) < 3 and not force then
+        return
+    end
+    lastStatusText = text
+    lastStatusTime = now
+
     -- ตรวจ level จาก emoji prefix อัตโนมัติ
     local level = "info"
     if text:match("^✅") or text:match("^✓") then
         level = "success"
     elseif text:match("^❌") or text:match("^✗") then
         level = "error"
-    elseif text:match("^⚠") or text:match("^⚡") or text:match("^Auto Kill priority") then
+    elseif text:match("^⚠") or text:match("^⚡") or text:match("^Auto Kill priority") or text:match("^🎒") then
         level = "warn"
     elseif text:match("^◈") or text:match("^K2NTA") then
         level = "system"
     end
     if env.Console then
         pcall(function() env.Console:Log(text, level) end)
+    else
+        print("[K2NTA] " .. text)
     end
-    print("[K2NTA] " .. text)
 end
 
 env.DebugLog = function(text)

@@ -1,0 +1,220 @@
+-- [[ DO NOT USE API.M ]] --
+
+local Settings = {
+    ShowAllOutputs = false;
+    BlockLoopCrash = true;
+    BlockAutisticError = false;
+    DisableLogService = true;
+    AllowHookmeta = false;
+}
+
+local LogServiceFound = {};
+
+if Settings.DisableLogService then
+    for i,v in pairs(getconnections(game:GetService("LogService").MessageOut)) do
+        --v:Disable();
+        table.insert(LogServiceFound, v);
+    end;
+end;
+
+warn("[TTJY Studio] : [ Tracking ACs ]");
+
+local services = {
+    "VirtualUser",
+    "VirtualInputManager",
+    "UGCValidationService"
+}; local ACs = {
+    ["FindService"] = {
+
+    };
+    ["hasRFCallback"] = false;
+}; local ACInfo = {
+    
+}; local DetectStrings = false;
+local AdonisMeta = false;
+local compareTables = false;
+local erroroverflow = false;
+local source_overflowerror = false;
+
+local cout = function(...)
+    if Settings.ShowAllOutputs then
+        print(...);
+    end;
+end;
+
+if Settings.BlockLoopCrash then
+    game:GetService("ScriptContext"):SetTimeout(1);
+end;
+
+for i,v in pairs(getgc(true)) do
+    if typeof(v) == 'function' and islclosure(v) then
+        local a = getconstants(v);
+        if table.find(a, "overflow") and not table.find(a, "__index") then
+            local num = table.find(a, "overflow");
+            setconstant(v, num, "niggaua");
+            erroroverflow = true;
+            source_overflowerror = getinfo(v);
+        end;
+    end;
+end
+
+local o;o=hookfunction(game.FindService, function(self,service)
+    cout(service)
+    if table.find(services, service) then table.insert(ACs.FindService, service); ACInfo[service]=getcallingscript() return nil; end;
+    return o(self, service);
+end);
+
+local deepNames = {}; for i,v in pairs(getgc(true)) do
+    if typeof(v) == 'table' and table.find(v, "islclosure") then
+        deepNames = table.clone(v);
+        table.clear(v); DetectStrings = true;
+    end;
+end;
+
+for i, v in getgc(true) do
+    if
+        typeof(v) == "table"
+        and rawget(v, "indexInstance")
+        and rawget(v, "newindexInstance")
+        and rawget(v, "namecallInstance")
+        and type(rawget(v,"newindexInstance")) == "table"
+    then
+        AdonisMeta = true;
+    end;
+end;
+
+local source_compareTables = nil; for i, v in getgc(true) do
+    if
+        typeof(v) == 'function'
+        and getinfo(v).name == 'compareTables'
+    then
+        local gvinfo = getinfo(v);
+        if string.find(gvinfo.source, "Anti") then
+            local o;o=hookfunction(v, function()
+                return true;
+            end); compareTables = true;
+            source_compareTables = gvinfo.source;
+        end;
+    end;
+end;
+
+local IsMetaFindService = false;
+if Settings.AllowHookmeta then
+    local o;o=hookmetamethod(game, "__namecall", function(self,...)
+        if not checkcaller() then
+            if getnamecallmethod() == "FindService" then
+                if table.find(services, select(1, ...)) then
+                    IsMetaFindService = true;
+                    return nil;
+                end;
+            end;
+        end; return o(self, ...);
+    end);
+end;
+
+local AlreadyRF, callbacRF = {}, {};
+local ValidateRF = function(v)
+    if table.find(AlreadyRF, v) then return; end;
+    table.insert(AlreadyRF, v);
+    local callback = getcallbackvalue(v, "OnClientInvoke");
+    if callback then
+        ACs.hasRFCallback = true;
+        callbacRF[v] = callback;
+    end;
+end; local instas = getinstances();
+for i=1, #instas do
+    local v=instas[i]; if v and v:IsA("RemoteFunction") then
+        ValidateRF(v);
+    end;
+end;
+
+getgenv().ACTest = {
+    TryHook = function(self, target)
+        for i=1, 2 do
+            local o;o=hookmetamethod(game, "__" .. target, newcclosure(function(...)
+                return o(...)
+            end));
+        end;
+    end,
+}
+
+getgenv().Tool = {GetAntiCheat=function()
+    warn("[TTJY Studio] : [ Getting All AntiCheat Tracked ]");
+    if #ACs.FindService > 0 then
+        warn("\t[Found]: <FindService>");
+        for i,v in pairs(ACs.FindService) do
+            warn("\t\t[@]", v);
+            warn("\t\t\t[INFO]", ACInfo[v], (ACInfo[v] ~= nil and ACInfo[v]:GetFullName()) or "");
+        end;
+    end; if IsMetaFindService then
+        warn("\t[Found]: <FindService @ Meta>");
+    end; if DetectStrings then
+        warn("\t[Found] <table with strings? assuming:log>");
+        warn("\t\t[INFO] Run ShowAllDetectStrings() to see.");
+    end; if compareTables then
+        if AdonisMeta then
+            warn("\t[Found] <compareTables [indexInstance | newindexInstance | namecallInstance] >");
+            warn("\t\t[Adonis @]", source_compareTables);
+            warn("\t\t[Patched] Successfully!");
+        else
+            warn("\t[Found] <compareTables? assuming:unknown>");
+        end;
+    end; if erroroverflow then
+        warn("\t[Found] <overflow? assuming:C_Closure_Error_Check [pcall | xpcall] >");
+        warn("\t\t[Patched] Successfully!");
+        warn("\t\t[INFO]");
+        table.foreach(source_overflowerror, function(i,v)
+            warn("\t\t\t", i, v);
+        end);
+    end; if #LogServiceFound > 0 then
+        warn("\t[Found] <LogService> : Blocked ",#LogServiceFound,"")
+    end; if ACs.hasRFCallback then
+        warn("\t[Found] <RemoteFunction> : OnClientInvoke");
+        warn("\t\t[?] <Run> : Tool:RFCheck(number, bool) for more info.");
+        for i,v in pairs(callbacRF) do
+            warn("\t\t\t["..tostring(table.find(AlreadyRF,i)).."@"..tostring(i).."] :"..tostring(v));
+        end;
+    else
+        warn("\t[Not Found] <RemoteFunction.OnClientInvoke> : Safer!");
+    end; if Settings.BlockLoopCrash then
+        warn("\t[Timeout] : Blocked")
+        warn("\t\tIf the game has loop crash, it will be show in the console.");
+    end;
+    warn("[AC Test Service] : Run Explain(function name) to check info.")
+    warn("\tACTest:TryHook('index' | 'namecall')");
+end, Decompile = function(self, ...)
+    return decompile(ACInfo[...]);
+end, ShowAllDetectStrings=function()
+    table.foreach(deepNames, print)
+end, RFCheck=function(self, num, setcl)
+    local v = callbacRF[AlreadyRF[num]]; if v then
+        warn("[TTJY Studio] : [@] : <"..tostring(num)..";"..tostring(AlreadyRF[num])..">")
+        local ups = getupvalues(v);
+        local cos = getconstants(v);
+        warn("\tupvs:", #ups);
+        warn("\tcons:", #cos);
+
+        if setcl then
+            setclipboard([[
+for i,v in pairs(getinstances()) do
+    if v.Name == "]] .. tostring(AlreadyRF[num]) .. [[" then
+        local callback = getcallbackvalue(v, "OnClientInvoke");
+        if callback and tostring(callback) == "]] .. tostring(v) .. [[" then
+            print(debug.info(callback, "slanf"));
+            if islclosure(callback) then
+                local ups = getupvalues(callback);
+                local cos = getconstants(callback);
+                local pro = getprotos(callback);
+            end;
+        end;
+    end;
+end
+            ]])
+        end;
+    end;
+end, Explain=function(self, ...)
+    if ... == "TryHook" then
+        warn("[TryHook] [INFO] : Some game detected how fast it take you to run code by index (.)")
+        warn("                   and namecall (:), if you get detected with this you might have to hook timer like os.clock or tick")
+    end;
+end};

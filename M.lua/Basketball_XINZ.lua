@@ -1030,7 +1030,7 @@ local Window = Library:Window({
     },
     Title = "HYPER HUB",
     Desc = "Basketball Automation & Knit Suite",
-    Icon = "https://i.postimg.cc/c4VhHd3s/HYPER-v2.png",
+    Icon = "https://i.postimg.cc/5tRtv6F0/89-B301701.png",
     Theme = "Dark",
     Config = {
         Keybind = Enum.KeyCode.RightShift,
